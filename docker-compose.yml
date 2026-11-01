@@ -1,0 +1,13 @@
+services:
+  analise:
+    build:
+      context: .
+      dockerfile: app/Dockerfile
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./app:/app
+      - ./dados:/app/dados
+
+volumes:
+  percistencia:
