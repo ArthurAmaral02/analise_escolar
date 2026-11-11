@@ -5,6 +5,7 @@ WORKDIR /app
 COPY app/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY app/src/ ./src/
+COPY app/src/ ./src
+copy app/dados ./dados
 
-CMD ["python", "-u", "src/teste.py"]
+CMD ["tail", "-f", "/dev/null"]
