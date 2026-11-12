@@ -1,5 +1,6 @@
 import csv
 from pathlib import Path
+from functools import reduce
 
 DELIMITADOR = ";"
 CAMINHO_CSV = Path(__file__).resolve().parent.parent / "dados" / "student-mat.csv"
@@ -24,4 +25,25 @@ with open(CAMINHO_CSV, newline="", encoding="utf-8") as arquivo:
         )
     )
 
-print(alunos[1])
+#print(alunos)
+
+quantidade_alunos = reduce(lambda acumulador, aluno: acumulador + 1, alunos, 0)
+
+
+
+total_q1 = reduce(
+    lambda acumulador, aluno: acumulador + aluno["G1"],
+    alunos,
+    0
+)
+
+print(total_q1)
+
+
+
+def teste():
+    teste_num = [1,2,3,4,5,6,7,8,9]
+    q = 9
+    probabilidade = reduce(lambda m, x: m + (x/q), teste_num, 0)
+    print(probabilidade)
+
