@@ -29,15 +29,25 @@ with open(CAMINHO_CSV, newline="", encoding="utf-8") as arquivo:
 
 quantidade_alunos = reduce(lambda acumulador, aluno: acumulador + 1, alunos, 0)
 
-
+print(quantidade_alunos)
 
 total_q1 = reduce(
     lambda acumulador, aluno: acumulador + aluno["G1"],
     alunos,
     0
+) / quantidade_alunos
+
+total_q2 = (
+    lambda valor: valor / quantidade_alunos
+)(
+    reduce(
+        lambda acumulador, aluno: acumulador + aluno["G1"],
+        alunos,
+        0
+    )
 )
 
-print(total_q1)
+print(total_q2)
 
 
 
