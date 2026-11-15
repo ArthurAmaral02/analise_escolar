@@ -1,37 +1,8 @@
 import csv
-from pathlib import Path
+from src.organização import DELIMITADOR, CAMINHO_CSV, COLUNAS_INTEIRAS, CODIFICACAO_BINARIA, CATEGORIAS_NOMINAIS
 
-DELIMITADOR = ";"
-CAMINHO_CSV = Path(__file__).resolve().parent.parent / "dados" / "student-mat.csv"
 
-COLUNAS_INTEIRAS = (
-    "age", "Medu", "Fedu", "traveltime", "studytime", "failures",
-    "famrel", "freetime", "goout", "Dalc", "Walc", "health",
-    "absences", "G1", "G2", "G3"
-)
 
-CODIFICACAO_BINARIA = {
-    "school": {"GP": 0, "MS": 1},
-    "sex": {"F": 0, "M": 1},
-    "address": {"U": 0, "R": 1},
-    "famsize": {"LE3": 0, "GT3": 1},
-    "Pstatus": {"T": 0, "A": 1},
-    "schoolsup": {"no": 0, "yes": 1},
-    "famsup": {"no": 0, "yes": 1},
-    "paid": {"no": 0, "yes": 1},
-    "activities": {"no": 0, "yes": 1},
-    "nursery": {"no": 0, "yes": 1},
-    "higher": {"no": 0, "yes": 1},
-    "internet": {"no": 0, "yes": 1},
-    "romantic": {"no": 0, "yes": 1}
-}
-
-CATEGORIAS_NOMINAIS = {
-    "Mjob": ("teacher", "health", "services", "at_home", "other"),
-    "Fjob": ("teacher", "health", "services", "at_home", "other"),
-    "reason": ("home", "reputation", "course", "other"),
-    "guardian": ("mother", "father", "other")
-}
 
 with open(CAMINHO_CSV, newline="", encoding="utf-8") as arquivo:
     leitor = csv.DictReader(arquivo, delimiter=DELIMITADOR)

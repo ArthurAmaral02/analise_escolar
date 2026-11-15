@@ -2,18 +2,7 @@
 # ==========================================
 # MÓDULO DE TRANSFORMAÇÕES DOS ALUNOS
 # ==========================================
-
-# Regra de aprovação baseada na nota G3
-NOTA_MINIMA_APROVACAO = 10
-
-# Faixas de faltas: (descrição, mínimo, máximo)
-FAIXAS_FALTAS = (
-    ("0 faltas", 0, 0),
-    ("1 a 5 faltas", 1, 5),
-    ("6 a 10 faltas", 6, 10),
-    ("mais de 10 faltas", 11, None),
-)
-
+from src.organização import NOTA_MINIMA_APROVACAO, FAIXAS_FALTAS
 
 # ==========================================
 # VALIDAÇÃO

@@ -1,6 +1,7 @@
 
-from dados import alunos
-from transformacoes import preparar_alunos, agrupar_por
+from src.dados import alunos
+from src.transformacoes import preparar_alunos,agrupar_por
+from src.validações import verificar_binarias
 
 # Prepara os registros
 alunos_preparados = preparar_alunos(alunos)
@@ -18,3 +19,18 @@ print("\nAlunos por faixa de faltas:")
 
 for faixa, grupo in faltas.items():
     print(f"{faixa}: {len(grupo)}")
+
+
+quantidade_e_chaves = lambda: (
+    print("Quantidade de variáveis:", len(alunos[0])),
+    print("\nVariáveis disponíveis:"),
+    print(tuple(alunos[0].keys()))
+)
+
+quantidade_e_chaves()
+
+espaco = lambda: (print("\n\n\n\n"))
+
+espaco()
+
+print(verificar_binarias(alunos))
