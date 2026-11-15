@@ -8,4 +8,4 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY app/src/ ./src
 copy app/dados ./dados
 
-CMD ["tail", "-f", "/dev/null"]
+CMD ["streamlit", "run", "interface/app.py", "--server.address=0.0.0.0", "--server.port=8080"]
