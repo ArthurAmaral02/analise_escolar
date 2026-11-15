@@ -1,4 +1,5 @@
 import csv
+from itertools import chain
 from pathlib import Path
 
 from src.organização import DELIMITADOR, CAMINHOS_CSV, COLUNAS_INTEIRAS, CODIFICACAO_BINARIA, CATEGORIAS_NOMINAIS
@@ -33,10 +34,14 @@ transformar_linha = lambda linha: {
                     == coluna_categoria[1]
                 )
             ),
-            (
-                (coluna, categoria)
-                for coluna, categorias in CATEGORIAS_NOMINAIS.items()
-                for categoria in categorias
+            chain.from_iterable(
+                map(
+                    lambda item: map(
+                        lambda categoria: (item[0], categoria),
+                        item[1]
+                    ),
+                    CATEGORIAS_NOMINAIS.items()
+                )
             )
         )
     )
@@ -53,8 +58,6 @@ ler_alunos = lambda caminho: tuple(
     )
 )
 
-# Alunos por disciplina: {"Matemática": (...), "Português": (...)}
-ALUNOS_POR_DISCIPLINA = {
-    disciplina: ler_alunos(caminho)
-    for disciplina, caminho in CAMINHOS_CSV.items()
-}
+# Carrega a disciplina escolhida. Pode lançar FileNotFoundError,
+# ValueError ou KeyError; quem chama decide como mostrar o erro.
+carregar_disciplina = lambda disciplina: ler_alunos(CAMINHOS_CSV[disciplina])

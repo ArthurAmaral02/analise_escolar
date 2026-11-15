@@ -1,38 +1,30 @@
-
-from src.dados import ALUNOS_POR_DISCIPLINA
-
-alunos = ALUNOS_POR_DISCIPLINA["Matemática"]
-from src.transformacoes import preparar_alunos,agrupar_por
+from src.dados import carregar_disciplina
+from src.transformacoes import preparar_alunos, agrupar_por
 from src.validações import verificar_binarias
 
-# Prepara os registros
+alunos = carregar_disciplina("Matemática")
+
+# Prepara os registros e agrupa por resultado e por faixa de faltas
 alunos_preparados = preparar_alunos(alunos)
-
-# Agrupa alunos por resultado
 resultados = agrupar_por(alunos_preparados, "resultado")
-
-print("Aprovados:", len(resultados.get("Aprovado", ())))
-print("Reprovados:", len(resultados.get("Reprovado", ())))
-
-# Agrupa alunos por faixa de faltas
 faltas = agrupar_por(alunos_preparados, "faixa_faltas")
 
-print("\nAlunos por faixa de faltas:")
-
-for faixa, grupo in faltas.items():
-    print(f"{faixa}: {len(grupo)}")
-
-
-quantidade_e_chaves = lambda: (
-    print("Quantidade de variáveis:", len(alunos[0])),
-    print("\nVariáveis disponíveis:"),
-    print(tuple(alunos[0].keys()))
+# Cada linha é uma expressão; map(print, ...) executa os prints
+tuple(
+    map(
+        print,
+        (
+            "Aprovados: " + str(len(resultados.get("Aprovado", ()))),
+            "Reprovados: " + str(len(resultados.get("Reprovado", ()))),
+            "\nAlunos por faixa de faltas:",
+        )
+        + tuple(map(lambda item: f"{item[0]}: {len(item[1])}", faltas.items()))
+        + (
+            "Quantidade de variáveis: " + str(len(alunos[0])),
+            "\nVariáveis disponíveis:",
+            str(tuple(alunos[0].keys())),
+            "\n\n\n\n",
+            str(verificar_binarias(alunos)),
+        )
+    )
 )
-
-quantidade_e_chaves()
-
-espaco = lambda: (print("\n\n\n\n"))
-
-espaco()
-
-print(verificar_binarias(alunos))

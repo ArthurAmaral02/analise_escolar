@@ -9,10 +9,18 @@ ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if ROOT_DIR not in sys.path:
     sys.path.insert(0, ROOT_DIR)
 
-from src.dados import ALUNOS_POR_DISCIPLINA
+from src.dados import carregar_disciplina
 from src.estatisticas import media, mediana, minimo, maximo, contagem
 from src.transformacoes import identificar_categoria, remover_nota_zero
+from src.validações import verificar_limites, verificar_binarias
+from src.analises import (
+    resumo_geral,
+    analise_por_grupo,
+    analise_por_faltas,
+    NOMES_FAIXAS,
+)
 from src.organização import (
+    CAMINHOS_CSV,
     CODIFICACAO_BINARIA,
     VARIAVEIS_NUMERICAS,
     VARIAVEIS_ORDINAIS,
@@ -67,13 +75,17 @@ st.sidebar.caption("Sistema de análise de desempenho")
 
 disciplina = st.sidebar.selectbox(
     "Disciplina (arquivo)",
-    list(ALUNOS_POR_DISCIPLINA)
+    list(CAMINHOS_CSV)
 )
 
 excluir_zeros = st.sidebar.checkbox(
     "Excluir alunos com G3 = 0",
-    value=False,
-    help="G3 = 0 pode indicar abandono ou não conclusão, não apenas nota baixa."
+    value=True,
+    help=(
+        "Decisão adotada: G3 = 0 indica, na maioria dos casos, "
+        "abandono ou não conclusão, e não nota baixa. "
+        "Veja a seção 'Decisões de análise' do README."
+    )
 )
 
 pagina = st.sidebar.selectbox(
@@ -83,6 +95,7 @@ pagina = st.sidebar.selectbox(
         "G1 - Primeira avaliação",
         "G2 - Segunda avaliação",
         "G3 - Avaliação final",
+        "Análises da proposta",
         "Profissão dos pais",
         "Análise de correlação",
     ]
@@ -90,10 +103,61 @@ pagina = st.sidebar.selectbox(
 
 
 # ==========================================
-# DADOS
+# CARREGAMENTO COM TRATAMENTO DE ERRO
 # ==========================================
 
-alunos_brutos = ALUNOS_POR_DISCIPLINA[disciplina]
+try:
+    alunos_brutos = carregar_disciplina(disciplina)
+except FileNotFoundError:
+    st.error(
+        f"Arquivo de {disciplina} não encontrado: "
+        f"{CAMINHOS_CSV[disciplina]}. Verifique se a pasta dados/ "
+        "contém o CSV."
+    )
+    st.stop()
+except (ValueError, KeyError) as erro:
+    st.error(
+        f"O arquivo de {disciplina} tem um valor ou coluna inesperada "
+        f"({erro}). Confira o formato: separador ';' e colunas do "
+        "dicionário de dados."
+    )
+    st.stop()
+
+if len(alunos_brutos) == 0:
+    st.error(f"O arquivo de {disciplina} não tem nenhum registro.")
+    st.stop()
+
+
+# ==========================================
+# VALIDAÇÃO DOS DADOS
+# ==========================================
+
+# Pares (coluna, registros fora da regra) que não estão vazios
+problemas_validacao = tuple(
+    filter(
+        lambda par: len(par[1]) > 0,
+        verificar_limites(alunos_brutos) + verificar_binarias(alunos_brutos)
+    )
+)
+
+with st.sidebar.expander("Validação dos dados"):
+    if problemas_validacao:
+        st.warning(
+            "Colunas com valores fora da regra: "
+            + ", ".join(
+                f"{coluna} ({len(registros)})"
+                for coluna, registros in problemas_validacao
+            )
+        )
+    else:
+        st.success(
+            f"Nenhum valor fora da regra em {len(alunos_brutos)} registros."
+        )
+
+
+# ==========================================
+# DADOS
+# ==========================================
 
 alunos = remover_nota_zero(alunos_brutos) if excluir_zeros else alunos_brutos
 
@@ -101,7 +165,9 @@ notas_g1 = tuple(map(lambda aluno: aluno["G1"], alunos))
 notas_g2 = tuple(map(lambda aluno: aluno["G2"], alunos))
 notas_g3 = tuple(map(lambda aluno: aluno["G3"], alunos))
 
-st.sidebar.caption(f"Alunos considerados: {len(alunos)}")
+st.sidebar.caption(
+    f"Alunos considerados: {len(alunos)} de {len(alunos_brutos)}"
+)
 
 
 # ==========================================
@@ -131,12 +197,37 @@ if pagina == "Visão geral":
     st.title(f"Visão geral — {disciplina}")
     st.write("Indicadores gerais do desempenho escolar.")
 
+    if len(alunos) == 0:
+        st.warning("Nenhum aluno restou após os filtros.")
+        st.stop()
+
+    resumo = resumo_geral(alunos)
+
     col1, col2, col3, col4 = st.columns(4)
 
-    col1.metric("Total de alunos", len(alunos))
-    col2.metric("Média G1", f"{media(notas_g1):.2f}")
-    col3.metric("Média G2", f"{media(notas_g2):.2f}")
-    col4.metric("Média G3", f"{media(notas_g3):.2f}")
+    col1.metric("Total de alunos", resumo["total"])
+    col2.metric(
+        "Aprovados (G3 ≥ 10)",
+        resumo["aprovados"],
+        f"{resumo['percentual_aprovados'] * 100:.1f}%"
+    )
+    col3.metric(
+        "Reprovados (G3 < 10)",
+        resumo["reprovados"],
+        f"{resumo['percentual_reprovados'] * 100:.1f}%",
+        delta_color="off"
+    )
+    col4.metric("Média G3", f"{resumo['media']:.2f}")
+
+    col1, col2, col3, col4 = st.columns(4)
+
+    col1.metric("Média G1", f"{media(notas_g1):.2f}")
+    col2.metric("Média G2", f"{media(notas_g2):.2f}")
+    col3.metric("Mediana G3", f"{resumo['mediana']:.2f}")
+    col4.metric(
+        "Amplitude de G3",
+        f"{resumo['minimo']} a {resumo['maximo']}"
+    )
 
     st.divider()
 
@@ -242,6 +333,83 @@ elif pagina in [
         "A divisão entre notas a partir de 10 e abaixo de 10 "
         "é apenas um critério de análise da avaliação parcial."
     )
+
+
+# ==========================================
+# ANÁLISES DA PROPOSTA (§6.3, §6.4, §6.5)
+# ==========================================
+
+elif pagina == "Análises da proposta":
+
+    st.title(f"Análises da proposta — {disciplina}")
+    st.write(
+        "Desempenho por tempo de estudo, faltas e reprovações anteriores. "
+        "Aprovação segue a regra G3 ≥ 10. Diferenças são descritivas, "
+        "não comprovam causa e efeito."
+    )
+
+    # (título, coluna, ordem das categorias, explicação)
+    grupos_proposta = (
+        (
+            "Tempo de estudo (studytime)",
+            "studytime",
+            ("1", "2", "3", "4"),
+            "Tempo semanal: 1 (<2h), 2 (2–5h), 3 (5–10h), 4 (>10h).",
+        ),
+        (
+            "Faltas por faixa",
+            "faixa_faltas",
+            NOMES_FAIXAS,
+            "Faixas definidas em organização.py (FAIXAS_FALTAS).",
+        ),
+        (
+            "Reprovações anteriores (failures)",
+            "failures",
+            ("0", "1", "2", "3"),
+            "Número de reprovações anteriores, não o resultado atual.",
+        ),
+    )
+
+    # Linhas (rótulo, quantidade, média de G3, proporção de aprovados)
+    linhas_grupo = lambda grupo: (
+        analise_por_faltas(alunos)
+        if grupo[1] == "faixa_faltas"
+        else analise_por_grupo(alunos, grupo[1], grupo[2])
+    )
+
+    # Tabela com percentual em escala de 0 a 100
+    tabela_grupo = lambda grupo: pd.DataFrame(
+        tuple(
+            map(
+                lambda linha: (
+                    linha[0], linha[1],
+                    round(linha[2], 2), round(linha[3] * 100, 1)
+                ),
+                linhas_grupo(grupo)
+            )
+        ),
+        columns=[grupo[0], "Alunos", "Média de G3", "% aprovados"]
+    )
+
+    # Renderiza título, tabela e gráfico de um grupo
+    renderizar_grupo = lambda grupo: (
+        st.subheader(grupo[0]),
+        st.caption(grupo[3]),
+        st.dataframe(tabela_grupo(grupo), hide_index=True, use_container_width=True),
+        st.plotly_chart(
+            px.bar(
+                tabela_grupo(grupo),
+                x=grupo[0],
+                y="% aprovados",
+                text_auto=".1f",
+                title=f"Percentual de aprovados por {grupo[0].lower()}"
+            ),
+            use_container_width=True
+        ),
+        st.divider(),
+    )
+
+    tuple(map(renderizar_grupo, grupos_proposta))
 
 
 # ==========================================

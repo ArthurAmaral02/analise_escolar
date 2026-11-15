@@ -3,6 +3,7 @@
 # MÓDULO DE TRANSFORMAÇÕES DOS ALUNOS
 # ==========================================
 from src.organização import NOTA_MINIMA_APROVACAO, FAIXAS_FALTAS
+from src.estatisticas import somar
 
 # ==========================================
 # VALIDAÇÃO
@@ -31,13 +32,15 @@ classificar_resultado = lambda nota: (
     else "Reprovado"
 )
 
-# Identifica a faixa de faltas
+# Identifica a faixa de faltas (primeira faixa que contém o valor)
 faixa_faltas = lambda faltas: next(
-    (
-        nome
-        for nome, minimo, maximo in FAIXAS_FALTAS
-        if faltas >= minimo
-        and (maximo is None or faltas <= maximo)
+    map(
+        lambda faixa: faixa[0],
+        filter(
+            lambda faixa: faltas >= faixa[1]
+            and (faixa[2] is None or faltas <= faixa[2]),
+            FAIXAS_FALTAS
+        )
     ),
     None
 )
@@ -76,7 +79,7 @@ agrupar_por = lambda registros, coluna: dict(
                 )
             )
         ),
-        sorted({registro[coluna] for registro in registros})
+        sorted(set(map(lambda registro: registro[coluna], registros)))
     )
 )
 
@@ -109,48 +112,42 @@ preparar_alunos = lambda alunos: tuple(
 
 # Identifica a profissão a partir das colunas One-Hot
 identificar_categoria = lambda aluno, prefixo: next(
-    (
-        coluna.replace(prefixo, "")
-        for coluna, valor in aluno.items()
-        if coluna.startswith(prefixo) and valor == 1
+    map(
+        lambda par: par[0].replace(prefixo, ""),
+        filter(
+            lambda par: par[0].startswith(prefixo) and par[1] == 1,
+            aluno.items()
+        )
     ),
     "desconhecido"
 )
 
 # Calcula a média de G3 de um grupo de alunos
 media_notas = lambda alunos: (
-    sum(map(lambda aluno: aluno["G3"], alunos)) / len(alunos)
+    somar(map(lambda aluno: aluno["G3"], alunos)) / len(alunos)
     if alunos else 0
 )
 
-# Agrupa os alunos pela profissão da mãe e calcula as médias
-media_por_profissao_mae = lambda alunos: {
-    profissao: media_notas(
-        tuple(
-            filter(
-                lambda aluno: identificar_categoria(aluno, "Mjob_") == profissao,
-                alunos
+# Média de G3 por profissão, para um prefixo one-hot ("Mjob_" ou "Fjob_")
+media_por_profissao = lambda alunos, prefixo: dict(
+    map(
+        lambda profissao: (
+            profissao,
+            media_notas(
+                tuple(
+                    filter(
+                        lambda aluno: identificar_categoria(aluno, prefixo) == profissao,
+                        alunos
+                    )
+                )
             )
-        )
+        ),
+        sorted(set(map(lambda aluno: identificar_categoria(aluno, prefixo), alunos)))
     )
-    for profissao in sorted({
-        identificar_categoria(aluno, "Mjob_")
-        for aluno in alunos
-    })
-}
+)
+
+# Agrupa os alunos pela profissão da mãe e calcula as médias
+media_por_profissao_mae = lambda alunos: media_por_profissao(alunos, "Mjob_")
 
 # Agrupa os alunos pela profissão do pai e calcula as médias
-media_por_profissao_pai = lambda alunos: {
-    profissao: media_notas(
-        tuple(
-            filter(
-                lambda aluno: identificar_categoria(aluno, "Fjob_") == profissao,
-                alunos
-            )
-        )
-    )
-    for profissao in sorted({
-        identificar_categoria(aluno, "Fjob_")
-        for aluno in alunos
-    })
-}
+media_por_profissao_pai = lambda alunos: media_por_profissao(alunos, "Fjob_")

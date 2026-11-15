@@ -1,15 +1,14 @@
-from src.organização import LIMITES_VARIAVEIS, COLUNAS_BINARIAS, GRUPOS_ONE_HOT, TODAS_VARIAVEIS,VARIAVEIS_ORIGINAIS
+import math
 
+from src.organização import LIMITES_VARIAVEIS, COLUNAS_BINARIAS, GRUPOS_ONE_HOT, TODAS_VARIAVEIS, VARIAVEIS_ORIGINAIS
+from src.estatisticas import contagem, somar
+
+# Quantidade de alunos com valor ausente (None) em cada coluna
 verificar_ausentes = lambda alunos: tuple(
     map(
         lambda coluna: (
             coluna,
-            sum(
-                map(
-                    lambda aluno: aluno[coluna] is None,
-                    alunos
-                )
-            )
+            contagem(alunos, lambda aluno: aluno[coluna] is None)
         ),
         alunos[0].keys()
     )
@@ -51,13 +50,14 @@ verificar_binarias = lambda alunos: tuple(
     )
 )
 
+# Alunos cujo grupo one-hot não tem exatamente uma categoria marcada
 verificar_one_hot = lambda alunos: tuple(
     map(
         lambda grupo: (
             grupo,
             tuple(
                 filter(
-                    lambda aluno: sum(
+                    lambda aluno: somar(
                         map(lambda coluna: aluno[coluna], GRUPOS_ONE_HOT[grupo])
                     ) != 1,
                     alunos
@@ -68,19 +68,16 @@ verificar_one_hot = lambda alunos: tuple(
     )
 )
 
-import math
-
+# Quantidade de valores NaN (float) em cada coluna
 verificar_nan = lambda alunos: tuple(
     map(
         lambda coluna: (
             coluna,
-            sum(
-                map(
-                    lambda aluno: (
-                        isinstance(aluno[coluna], float)
-                        and math.isnan(aluno[coluna])
-                    ),
-                    alunos
+            contagem(
+                alunos,
+                lambda aluno: (
+                    isinstance(aluno[coluna], float)
+                    and math.isnan(aluno[coluna])
                 )
             )
         ),

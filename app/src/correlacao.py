@@ -5,8 +5,9 @@
 # Nenhuma função imprime, lê arquivos ou altera os registros recebidos.
 
 import math
+from itertools import product
 
-from src.estatisticas import media, contagem
+from src.estatisticas import media, contagem, somar
 from src.transformacoes import agrupar_por
 from src.organização import CODIFICACAO_BINARIA
 
@@ -21,10 +22,15 @@ valores = lambda alunos, coluna: tuple(
 )
 
 # Rótulos legíveis para colunas binárias (ex.: 0 -> "GP")
-ROTULOS_BINARIOS = {
-    coluna: {codigo: texto for texto, codigo in mapa.items()}
-    for coluna, mapa in CODIFICACAO_BINARIA.items()
-}
+ROTULOS_BINARIOS = dict(
+    map(
+        lambda item: (
+            item[0],
+            dict(map(lambda par: (par[1], par[0]), item[1].items()))
+        ),
+        CODIFICACAO_BINARIA.items()
+    )
+)
 
 # Converte o código de uma coluna no rótulo exibido
 rotulo = lambda coluna, valor: ROTULOS_BINARIOS.get(coluna, {}).get(
@@ -38,15 +44,17 @@ rotulo = lambda coluna, valor: ROTULOS_BINARIOS.get(coluna, {}).get(
 
 # Desvios em relação à média
 desvios = lambda vetor: (
-    lambda m: tuple(v - m for v in vetor)
+    lambda m: tuple(map(lambda v: v - m, vetor))
 )(media(vetor))
 
 # Soma dos quadrados dos desvios
-soma_quadrados = lambda vetor: sum(d * d for d in desvios(vetor))
+soma_quadrados = lambda vetor: somar(
+    map(lambda d: d * d, desvios(vetor))
+)
 
 # Soma dos produtos dos desvios (base da covariância)
-soma_produtos = lambda x, y: sum(
-    a * b for a, b in zip(desvios(x), desvios(y))
+soma_produtos = lambda x, y: somar(
+    map(lambda par: par[0] * par[1], zip(desvios(x), desvios(y)))
 )
 
 
@@ -66,9 +74,11 @@ pearson = lambda x, y: (
 
 # Postos com empates resolvidos pela média dos postos
 postos = lambda vetor: tuple(
-    contagem(vetor, lambda w: w < v)
-    + (contagem(vetor, lambda w: w == v) + 1) / 2
-    for v in vetor
+    map(
+        lambda v: contagem(vetor, lambda w: w < v)
+        + (contagem(vetor, lambda w: w == v) + 1) / 2,
+        vetor
+    )
 )
 
 # Correlação de Spearman (relação monotônica): Pearson sobre os postos
@@ -80,22 +90,30 @@ coeficiente = lambda x, y, metodo: (
 )
 
 # Matriz de correlação como dicionário {(variável_a, variável_b): r}
-matriz_correlacao = lambda alunos, variaveis, metodo: {
-    (a, b): coeficiente(
-        valores(alunos, a), valores(alunos, b), metodo
+matriz_correlacao = lambda alunos, variaveis, metodo: dict(
+    map(
+        lambda par: (
+            par,
+            coeficiente(
+                valores(alunos, par[0]), valores(alunos, par[1]), metodo
+            )
+        ),
+        product(variaveis, variaveis)
     )
-    for a in variaveis
-    for b in variaveis
-}
+)
 
 # Matriz como lista de linhas para o gráfico (None vira NaN)
-matriz_em_linhas = lambda matriz, variaveis: [
-    [
-        math.nan if matriz[(a, b)] is None else matriz[(a, b)]
-        for b in variaveis
-    ]
-    for a in variaveis
-]
+matriz_em_linhas = lambda matriz, variaveis: list(
+    map(
+        lambda a: list(
+            map(
+                lambda b: math.nan if matriz[(a, b)] is None else matriz[(a, b)],
+                variaveis
+            )
+        ),
+        variaveis
+    )
+)
 
 
 # ==========================================
@@ -161,10 +179,12 @@ registros_por_grupo = lambda alunos, coluna: tuple(
 
 # Resumo por grupo: (rótulo, quantidade de alunos, média de G3)
 resumo_por_grupo = lambda alunos, coluna: tuple(
-    (
-        rotulo(coluna, valor),
-        len(grupo),
-        media(valores(grupo, "G3"))
+    map(
+        lambda item: (
+            rotulo(coluna, item[0]),
+            len(item[1]),
+            media(valores(item[1], "G3"))
+        ),
+        agrupar_por(alunos, coluna).items()
     )
-    for valor, grupo in agrupar_por(alunos, coluna).items()
 )
