@@ -208,10 +208,10 @@ A ordem abaixo considera dependências entre as etapas e prioriza a construção
 
 ## Etapa 1 — Preparação dos dados
 
-- [ ] Revisar as variáveis disponíveis no dataset.
-- [ ] Separar variáveis numéricas, ordinais, binárias e nominais.
-- [ ] Verificar se todas as variáveis estão corretamente codificadas.
-- [ ] Conferir valores ausentes e possíveis inconsistências.
+- [x] Revisar as variáveis disponíveis no dataset.
+- [x] Separar variáveis numéricas, ordinais, binárias e nominais.
+- [x] Verificar se todas as variáveis estão corretamente codificadas.
+- [x] Conferir valores ausentes e possíveis inconsistências.
 - [ ] Separar G1, G2 e G3 para análises específicas.
 
 ## Etapa 2 — Análise das avaliações
