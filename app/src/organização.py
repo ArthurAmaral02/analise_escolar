@@ -109,7 +109,14 @@ GRUPOS_ONE_HOT = {
 
 
 DELIMITADOR = ";"
-CAMINHO_CSV = Path(__file__).resolve().parent.parent / "dados" / "student-mat.csv"
+PASTA_DADOS = Path(__file__).resolve().parent.parent / "dados"
+CAMINHO_CSV = PASTA_DADOS / "student-mat.csv"
+
+# Arquivos por disciplina (cada um é analisado separadamente)
+CAMINHOS_CSV = {
+    "Matemática": PASTA_DADOS / "student-mat.csv",
+    "Português": PASTA_DADOS / "student-por.csv",
+}
 
 COLUNAS_INTEIRAS = (
     "age", "Medu", "Fedu", "traveltime", "studytime", "failures",

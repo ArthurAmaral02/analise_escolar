@@ -65,15 +65,25 @@ adicionar_faixa_faltas = lambda aluno: {
 # ==========================================
 
 # Agrupa registros de acordo com uma coluna
-agrupar_por = lambda registros, coluna: {
-    valor: tuple(
-        filter(
-            lambda registro: registro[coluna] == valor,
-            registros
-        )
+agrupar_por = lambda registros, coluna: dict(
+    map(
+        lambda valor: (
+            valor,
+            tuple(
+                filter(
+                    lambda registro: registro[coluna] == valor,
+                    registros
+                )
+            )
+        ),
+        sorted({registro[coluna] for registro in registros})
     )
-    for valor in sorted({registro[coluna] for registro in registros})
-}
+)
+
+# Remove alunos sem nota final (G3 = 0), sem alterar a tupla original
+remover_nota_zero = lambda alunos: tuple(
+    filter(lambda aluno: aluno["G3"] != 0, alunos)
+)
 
 
 # ==========================================

@@ -1,5 +1,7 @@
 
-from src.dados import alunos
+from src.dados import ALUNOS_POR_DISCIPLINA
+
+alunos = ALUNOS_POR_DISCIPLINA["Matemática"]
 from src.transformacoes import preparar_alunos,agrupar_por
 from src.validações import verificar_binarias
 
