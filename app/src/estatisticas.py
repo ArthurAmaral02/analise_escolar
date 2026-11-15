@@ -1,58 +1,38 @@
-"""Funções puras de estatística descritiva.
 
-Regras desta camada:
-- não lê arquivos, não imprime nada e não altera a entrada;
-- mesma entrada sempre produz a mesma saída;
-- quando não há valores para calcular, devolve None.
-"""
+media = lambda valores: (
+    sum(v) / len(v) if (v := tuple(valores)) else None
+)
 
-import statistics
+# Mediana
+mediana = lambda valores: (
+    (
+        sorted(v)[len(v) // 2]
+        if len(v) % 2 != 0
+        else (
+            sorted(v)[len(v) // 2 - 1]
+            + sorted(v)[len(v) // 2]
+        ) / 2
+    )
+    if (v := tuple(valores)) else None
+)
 
+# Menor valor
+minimo = lambda valores: (
+    min(v) if (v := tuple(valores)) else None
+)
 
-def media(valores):
-    """Média aritmética, ou None se não houver valores."""
-    valores = tuple(valores)
-    if not valores:
-        return None
-    return sum(valores) / len(valores)
+# Maior valor
+maximo = lambda valores: (
+    max(v) if (v := tuple(valores)) else None
+)
 
+# Contagem de valores que satisfazem uma condição
+contagem = lambda valores, predicado: sum(
+    1 for valor in valores if predicado(valor)
+)
 
-def mediana(valores):
-    """Mediana, ou None se não houver valores."""
-    valores = tuple(valores)
-    if not valores:
-        return None
-    return statistics.median(valores)
-
-
-def minimo(valores):
-    """Menor valor, ou None se não houver valores."""
-    valores = tuple(valores)
-    if not valores:
-        return None
-    return min(valores)
-
-
-def maximo(valores):
-    """Maior valor, ou None se não houver valores."""
-    valores = tuple(valores)
-    if not valores:
-        return None
-    return max(valores)
-
-
-def contagem(valores, predicado):
-    """Quantos valores satisfazem o predicado.
-
-    Recebe o predicado como função: a regra de seleção entra como argumento,
-    e a função não precisa saber qual é.
-    """
-    return sum(1 for valor in valores if predicado(valor))
-
-
-def proporcao(valores, predicado):
-    """Fração (0 a 1) dos valores que satisfazem o predicado, ou None se vazio."""
-    valores = tuple(valores)
-    if not valores:
-        return None
-    return contagem(valores, predicado) / len(valores)
+# Proporção de valores que satisfazem uma condição
+proporcao = lambda valores, predicado: (
+    contagem(v, predicado) / len(v)
+    if (v := tuple(valores)) else None
+)

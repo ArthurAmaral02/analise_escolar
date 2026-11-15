@@ -1,17 +1,12 @@
-"""Transformações puras sobre registros de alunos.
 
-Regras desta camada:
-- nenhuma função altera a entrada: sempre devolve coleções ou dicionários novos;
-- nenhuma função lê arquivos ou imprime nada;
-- a regra de aprovação e as faixas de faltas ficam aqui, documentadas.
-"""
+# ==========================================
+# MÓDULO DE TRANSFORMAÇÕES DOS ALUNOS
+# ==========================================
 
-from functools import reduce
-
-# Regra analítica da proposta: G3 >= 10 é aprovação.
+# Regra de aprovação baseada na nota G3
 NOTA_MINIMA_APROVACAO = 10
 
-# Faixas de faltas (inclusivas). Máximo None significa "sem limite".
+# Faixas de faltas: (descrição, mínimo, máximo)
 FAIXAS_FALTAS = (
     ("0 faltas", 0, 0),
     ("1 a 5 faltas", 1, 5),
@@ -20,72 +15,143 @@ FAIXAS_FALTAS = (
 )
 
 
-def compor(*funcoes):
-    """Devolve uma função que aplica as funções em sequência, da esquerda para a direita."""
-    return lambda entrada: reduce(lambda acumulado, funcao: funcao(acumulado), funcoes, entrada)
+# ==========================================
+# VALIDAÇÃO
+# ==========================================
 
-
-def mapear(funcao):
-    """Transforma uma função de um registro em uma função de coleção.
-
-    Útil para compor: mapear(f) aplicado a uma coleção devolve uma tupla nova.
-    """
-    return lambda registros: tuple(map(funcao, registros))
-
-
-def nota_valida(aluno):
-    """True se G3 é um inteiro entre 0 e 20."""
-    nota = aluno.get("G3")
-    return isinstance(nota, int) and 0 <= nota <= 20
-
-
-def notas_validas(alunos):
-    """Mantém só os alunos com G3 válida. Não inclui G3 = 0 como inválida."""
-    return tuple(filter(nota_valida, alunos))
-
-
-def classificar_resultado(nota):
-    """'Aprovado' ou 'Reprovado' a partir de G3."""
-    return "Aprovado" if nota >= NOTA_MINIMA_APROVACAO else "Reprovado"
-
-
-def faixa_faltas(faltas):
-    """Rótulo da faixa de faltas a que o número pertence, ou None se fora de todas."""
-    faixa = next(
-        filter(
-            lambda f: f[1] <= faltas and (f[2] is None or faltas <= f[2]),
-            FAIXAS_FALTAS,
-        ),
-        None,
-    )
-    return faixa[0] if faixa else None
-
-
-def adicionar_resultado(aluno):
-    """Cópia do aluno com a chave 'resultado' acrescentada."""
-    return {**aluno, "resultado": classificar_resultado(aluno["G3"])}
-
-
-def adicionar_faixa_faltas(aluno):
-    """Cópia do aluno com a chave 'faixa_faltas' acrescentada."""
-    return {**aluno, "faixa_faltas": faixa_faltas(aluno["absences"])}
-
-
-def agrupar_por(registros, coluna):
-    """Dicionário {valor: tupla de registros}, com os valores em ordem.
-
-    Cada grupo é uma tupla nova; a lista de entrada não muda.
-    """
-    valores = tuple(sorted({registro[coluna] for registro in registros}))
-    return {
-        valor: tuple(filter(lambda registro: registro[coluna] == valor, registros))
-        for valor in valores
-    }
-
-
-# Pipeline de preparação: valida, classifica e acrescenta a faixa de faltas.
-preparar_alunos = compor(
-    notas_validas,
-    mapear(adicionar_resultado),
-    mapear(adicionar_faixa_faltas),
+# Verifica se G3 é um inteiro entre 0 e 20
+nota_valida = lambda aluno: (
+    type(aluno.get("G3")) is int
+    and 0 <= aluno["G3"] <= 20
 )
+
+# Filtra alunos com notas válidas
+notas_validas = lambda alunos: tuple(
+    filter(nota_valida, alunos)
+)
+
+
+# ==========================================
+# CLASSIFICAÇÃO
+# ==========================================
+
+# Classifica o resultado do aluno
+classificar_resultado = lambda nota: (
+    "Aprovado"
+    if nota >= NOTA_MINIMA_APROVACAO
+    else "Reprovado"
+)
+
+# Identifica a faixa de faltas
+faixa_faltas = lambda faltas: next(
+    (
+        nome
+        for nome, minimo, maximo in FAIXAS_FALTAS
+        if faltas >= minimo
+        and (maximo is None or faltas <= maximo)
+    ),
+    None
+)
+
+
+# ==========================================
+# TRANSFORMAÇÃO DE REGISTROS
+# ==========================================
+
+# Adiciona o resultado ao registro do aluno
+adicionar_resultado = lambda aluno: {
+    **aluno,
+    "resultado": classificar_resultado(aluno["G3"])
+}
+
+# Adiciona a faixa de faltas ao registro
+adicionar_faixa_faltas = lambda aluno: {
+    **aluno,
+    "faixa_faltas": faixa_faltas(aluno["absences"])
+}
+
+
+# ==========================================
+# AGRUPAMENTO
+# ==========================================
+
+# Agrupa registros de acordo com uma coluna
+agrupar_por = lambda registros, coluna: {
+    valor: tuple(
+        filter(
+            lambda registro: registro[coluna] == valor,
+            registros
+        )
+    )
+    for valor in sorted({registro[coluna] for registro in registros})
+}
+
+
+# ==========================================
+# PREPARAÇÃO DOS ALUNOS
+# ==========================================
+
+# Valida, classifica e acrescenta a faixa de faltas
+preparar_alunos = lambda alunos: tuple(
+    map(
+        lambda aluno: {
+            **adicionar_resultado(aluno),
+            "faixa_faltas": faixa_faltas(aluno["absences"])
+        },
+        notas_validas(alunos)
+    )
+)
+
+
+
+# ==========================================
+# COMPARAÇÃO: PROFISSÃO DOS PAIS E NOTAS
+# ==========================================
+
+# Identifica a profissão a partir das colunas One-Hot
+identificar_categoria = lambda aluno, prefixo: next(
+    (
+        coluna.replace(prefixo, "")
+        for coluna, valor in aluno.items()
+        if coluna.startswith(prefixo) and valor == 1
+    ),
+    "desconhecido"
+)
+
+# Calcula a média de G3 de um grupo de alunos
+media_notas = lambda alunos: (
+    sum(map(lambda aluno: aluno["G3"], alunos)) / len(alunos)
+    if alunos else 0
+)
+
+# Agrupa os alunos pela profissão da mãe e calcula as médias
+media_por_profissao_mae = lambda alunos: {
+    profissao: media_notas(
+        tuple(
+            filter(
+                lambda aluno: identificar_categoria(aluno, "Mjob_") == profissao,
+                alunos
+            )
+        )
+    )
+    for profissao in sorted({
+        identificar_categoria(aluno, "Mjob_")
+        for aluno in alunos
+    })
+}
+
+# Agrupa os alunos pela profissão do pai e calcula as médias
+media_por_profissao_pai = lambda alunos: {
+    profissao: media_notas(
+        tuple(
+            filter(
+                lambda aluno: identificar_categoria(aluno, "Fjob_") == profissao,
+                alunos
+            )
+        )
+    )
+    for profissao in sorted({
+        identificar_categoria(aluno, "Fjob_")
+        for aluno in alunos
+    })
+}
