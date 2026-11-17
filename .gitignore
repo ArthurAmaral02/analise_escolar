@@ -1,1 +1,4 @@
 __pycache__/
+.venv/
+# Arquivos de lock de programas de escritório (ex.: LibreOffice/ONLYOFFICE)
+.~lock.*#
