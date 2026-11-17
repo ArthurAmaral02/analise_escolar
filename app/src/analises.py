@@ -1,9 +1,7 @@
 # ==========================================
 # MÓDULO DE ANÁLISES DA PROPOSTA (funções puras)
 # ==========================================
-# Cobre as seções 6.1 (resumo geral), 6.3 (tempo de estudo),
-# 6.4 (faltas por faixa) e 6.5 (reprovações anteriores).
-# Nenhuma função imprime, lê arquivos ou altera os registros recebidos.
+
 
 from src.estatisticas import media, mediana, minimo, maximo, contagem, proporcao
 from src.transformacoes import agrupar_por, adicionar_faixa_faltas

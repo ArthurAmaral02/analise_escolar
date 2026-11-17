@@ -5,11 +5,8 @@ from pathlib import Path
 from src.organização import DELIMITADOR, CAMINHOS_CSV, COLUNAS_INTEIRAS, CODIFICACAO_BINARIA, CATEGORIAS_NOMINAIS
 
 
-# ==========================================
-# LEITURA (sem efeitos colaterais no import)
-# ==========================================
-
 # Converte uma linha do CSV em registro de aluno (inteiros, binárias e one-hot)
+
 transformar_linha = lambda linha: {
     **dict(
         map(
@@ -58,6 +55,5 @@ ler_alunos = lambda caminho: tuple(
     )
 )
 
-# Carrega a disciplina escolhida. Pode lançar FileNotFoundError,
-# ValueError ou KeyError; quem chama decide como mostrar o erro.
+# Carrega a disciplina escolhida.
 carregar_disciplina = lambda disciplina: ler_alunos(CAMINHOS_CSV[disciplina])

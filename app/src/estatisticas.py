@@ -8,8 +8,7 @@ somar = lambda valores: reduce(operator.add, valores, 0)
 media = lambda valores: (
     somar(v) / len(v) if (v := tuple(valores)) else None
 )
-
-# Mediana (ordena uma vez e escolhe o valor central ou a média dos dois centrais)
+# calcula a mediana, permite valores floats
 mediana = lambda valores: (
     (
         lambda s, n: (

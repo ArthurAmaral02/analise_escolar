@@ -336,7 +336,7 @@ elif pagina in [
 
 
 # ==========================================
-# ANÁLISES DA PROPOSTA (§6.3, §6.4, §6.5)
+# ANÁLISES DA PROPOSTA 
 # ==========================================
 
 elif pagina == "Análises da proposta":
